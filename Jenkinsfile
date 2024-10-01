@@ -1,31 +1,20 @@
 pipeline {
     agent any
 	environment{
-		def CLIMA_ACTUAL="SOLEADO"
 		def POBLACION_ACTUAL=5500
 	}
 
     stages {
-        stage('InformarClima') {
+        stage('GeneraFicheroEstadisticoPoblacion') {
             steps {
-                echo 'Inicio de la stage InformarClima'
+                echo 'Inicio de la stage GeneraFicheroEstadisticoPoblacion'
                 script{
-                    num1 = 2
-                    num2 = 4
-                    total = num1 + num2
-					SALIDA = total
-                    bat """
-					echo El clima actual es: ${CLIMA_ACTUAL}
-					"""
-                }
-            }
-        }
-        stage('InformarPoblacion') {
-            steps {
-                echo 'Inicio de la stage InformarPoblacion'
-                script{
+                    def currentDate = new Date().format('yyyy_MM_dd') 
+                    def outFile = "poblacion_neta_${currentDate}.txt" 
+					def poblacionNeta = POBLACION_ACTUAL.toInteger() * 0.8
+
 					bat """
-                    echo La poblacion actual es:  ${POBLACION_ACTUAL}
+                    echo La poblacion neta es:  ${poblacionNeta} > C:\\${outFile}
 					"""
                 }
             }
