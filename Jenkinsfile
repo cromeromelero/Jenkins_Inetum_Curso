@@ -1,96 +1,113 @@
 pipeline {
     agent any
 
-	environment{
-		def SALIDA=""
-	}
+    environment {
+        DIA_ACTUAL = new Date().format('EEEE')
+        OUTPUT_FILE = "C:\\out.txt"
+        valorLinea0 = ''
+        valorLinea1 = ''
+        valorLinea2 = ''
+        valorLinea3 = ''
+    }
 
     stages {
-        stage('Suma') {
+        stage('Leer Fichero') {
             steps {
-                echo 'Inicio de la stage Suma'
-                script{
-                    num1 = 2
-                    num2 = 4
-                    total = num1 + num2
-					SALIDA = total
-                    println('La suma de ' + num1 + ' y ' + num2 +' es: ' + total)
-					bat """
-							echo La suma del num1 y  num2  es:  ${SALIDA} >> C:\\resultados_FechaDeHoy.txt
-						"""
+                script {
+                    def filePath = 'C:\\valores.txt'
+                    def fileContent = readFile(filePath)
+                    def lines = fileContent.split('\n')
+                        valorLinea0 = lines[0].trim() as Integer
+                        valorLinea1 = lines[1].trim() as Integer
+                        valorLinea2 = lines[2].trim() as Integer
+                        valorLinea3 = lines[3].trim() as Integer
                 }
             }
         }
-        stage('Resta') {
-            steps {
-                echo 'Inicio de la stage Resta'
-                script{
-                    num1 = 12
-                    num2 = 8
-                    total = num1 - num2
-					SALIDA = total
-
-                    println('La resta de ' + num1 + ' y ' + num2 +' es: ' + total)
-					bat """
-							echo La resta del num1 y  num2  es:  ${SALIDA} >> C:\\resultados_FechaDeHoy.txt
-						"""
-                }
+        stage('Lunes - Poblacion') {
+            when {
+                expression { return env.DIA_ACTUAL == "lunes" }
             }
-        }
-        stage('Multiplicacion') {
             steps {
-                echo 'Inicio de la stage Multiplicacion'
-                script{
-                    num1 = 2
-                    num2 = 4
-                    total = num1 * num2
-					SALIDA = total
-
-                    println('La multiplicacion de ' + num1 + ' y ' + num2 +' es: ' + total)
-					bat """
-							echo La multiplicacion del num1 y  num2  es:  ${SALIDA} >> C:\\resultados_FechaDeHoy.txt
-						"""
-                }
-            }
-        }
-        stage('Division') {
-            steps {
-                echo 'Inicio de la stage Division'
-                script{
-                    num1 = 9
-                    num2 = 3
-                    boolFlag = false
-                    if(num1 == 0 || num2 == 0){
-                        boolFlag = true
-                    }
-                    if(boolFlag){
-                        println('La division no es posible cuando uno de los operandos sea 0')
-                    }else {
-                        total = num1 / num2
-						SALIDA = total
-
-                        println('La divion de ' + num1 + ' y ' + num2 +' es: ' + total)
-						bat """
-							echo La division del num1 y  num2  es:  ${SALIDA} >> C:\\resultados_FechaDeHoy.txt
-						"""
-                    }
-                    
-                }
-            }
-        }
-        stage('generacionFicheroSalida') {
-			steps{
-				script {
+                script {
+                    def calcularPoblacionFinal = valorLinea0 * 0.80
                     bat """
-                        
+                        echo Lunes: La población final es: ${calcularPoblacionFinal} >> ${OUTPUT_FILE}
                     """
-
-                    def fileContent = readFile('C:\\resultados_FechaDeHoy.txt')
-                    
-                    echo "File content is: ${fileContent}"
                 }
-			
-			}
-		}
+            }
+        }
+        stage('Martes - Operaciones') {
+            when {
+                expression { return env.DIA_ACTUAL == "martes" }
+            }
+            steps {
+                script {
+                    def suma = valorLinea1 + valorLinea2
+                    def resta = valorLinea1 - valorLinea2
+                    def multiplicacion = valorLinea1 * valorLinea2
+                    def division = valorLinea1 / valorLinea2
+                    bat """
+                        echo Martes: Suma de ${valorLinea1} y ${valorLinea2} es: ${suma} >> ${OUTPUT_FILE}
+                        echo Martes: Resta de ${valorLinea1} y ${valorLinea2} es: ${resta} >> ${OUTPUT_FILE}
+                        echo Martes: Multiplicacion de ${valorLinea1} y ${valorLinea2} es: ${multiplicacion} >> ${OUTPUT_FILE}
+                        echo Martes: Division de ${valorLinea1} y ${valorLinea2} es: ${division} >> ${OUTPUT_FILE}
+                    """
+                }
+            }
+        }
+        stage('Miercoles - Temperatura') {
+            when {
+                expression { return env.DIA_ACTUAL == "miércoles" }
+            }
+            steps {
+                script {
+                    def celsius = (valorLinea3 - 32) * (5 / 9)
+                    bat """
+                        echo Miércoles: La temperatura en Celsius es: ${celsius} >> ${OUTPUT_FILE}
+                    """
+                }
+            }
+        }
+
+        // Thursday: Inform the user running the pipeline
+        stage('Jueves - Usuario') {
+            when {
+                expression { return env.DIA_ACTUAL == "juevess" }
+            }
+            steps {
+                script {
+                    def currentUser =  currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause)
+                    echo "Jueves: El usuario que está ejecutando el pipeline es: ${currentUser.getUserId()}"
+                    
+                }
+            }
+        }
+
+        // Friday: Generate a basic Maven project from start.spring.io and run clean install
+        stage('Viernes - Maven') {
+            when {
+                expression { return env.DIA_ACTUAL == "jueves" }
+            }
+            steps {
+                script {
+                    // Download the Maven project from start.spring.io
+                    bat '''
+						curl https://start.spring.io/starter.zip -d dependencies=mysql -d type=maven-project -o spring-boot-maven.zip
+						powershell -Command "Expand-Archive -Path spring-boot-maven.zip -DestinationPath spring-boot-project"
+					'''
+					// Navigate to the project folder and run 'mvn clean install'
+					dir('spring-boot-project') {
+						bat 'mvn clean install'
+					}
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Pipeline finished"
+        }
     }
 }
